@@ -32,8 +32,8 @@ pvddCnx.on("pvdAttributes", function(pvdname, attrs) {
 			JSON.stringify(attrs, null, "\t"));
 
 	var captivePortal =
-		attrs.captivePortal ||
-		(attrs.extraInfo ? attrs.extraInfo.captivePortal : null);
+		attrs.captivePortalURL ||
+		(attrs.extraInfo ? attrs.extraInfo.captivePortalURL : null);
 
 	if (captivePortal != null &&
 	    allPvd[pvdname] != null &&
