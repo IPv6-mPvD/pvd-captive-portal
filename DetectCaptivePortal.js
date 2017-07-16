@@ -5,6 +5,7 @@ var pvdd = require("pvdd");
 
 var pvddCnx = null;
 var allPvd = {};
+var alreadyStarted = false;
 
 function handleConnection() {
 	allPvd = {};
@@ -16,6 +17,7 @@ function handleConnection() {
 
 function handleError(err) {
         console.log("Connection lost with pvdd (" + err.message + ")");
+	alreadyStarted = false;
 }
 
 function handlePvdList(pvdList) {
@@ -42,8 +44,11 @@ function handlePvdAttributes(pvdname, attrs) {
 	if (captivePortal != null &&
 	    allPvd[pvdname] != null &&
 	    allPvd[pvdname].captivePortal != captivePortal) {
-		exec("firefox -new-tab " + "http://localhost:8080 &");
-		console.log("Starting firefox on " + "http://localhost:8080");
+		if (! alreadyStarted) {
+			exec("firefox -new-tab " + "http://localhost:8080 &");
+			console.log("Starting firefox on " + "http://localhost:8080");
+			alreadyStarted = true;
+		}
 	}
 	allPvd[pvdname].captivePortal = captivePortal;
 }

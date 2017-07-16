@@ -3,4 +3,26 @@
 export NODE_PATH
 NODE_PATH=/usr/local/lib/node_modules
 
+ps auxww |
+grep pvdHttpServer.js |
+grep node |
+awk '{print $2}' |
+while read p
+do
+	kill $p
+done
+
+node `dirname $0`/pvdHttpServer.js -f `dirname $0`/CaptivePortal.html >/dev/null 2>&1 &
+
+ps auxww |
+grep DetectCaptivePortal.js |
+grep node | 
+awk '{print $2}' |
+while read p
+do
+	kill $p
+done
+
+sleep 5
+
 exec node `dirname $0`/DetectCaptivePortal.js "$@"
