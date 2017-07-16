@@ -1,0 +1,254 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<script type="text/javascript">
+	var ws;
+	var CurrentPvd = null;
+	var CurrentPvdList = [];
+	var AllAttributes = {};
+	var PvdAttributesContent;
+	var attributesRetrieved = {};
+	var pvdWithPortal = [];
+	var pvdPortal = {};
+	var allPvd = [];
+
+	function GetPvdElement(Pvd, prefix = "pvd") {
+		return(Pvd == null ?
+				null :
+				document.getElementById(prefix + "-" + Pvd));
+	}
+
+	function ActivePvD(Pvd) {
+		if ((Item = GetPvdElement(Pvd, "label")) != null) {
+			Item.setAttribute(
+				"style", 
+				"display:block; width:100%; font-style:normal; font-weight:normal; color:black");
+		}
+	}
+
+	function SetClickAuthenticate(Pvd) {
+		if (pvdPortal[Pvd] == null) {
+			return;
+		}
+		if ((Item = GetPvdElement(Pvd)) != null) {
+			Item.addEventListener("click", function(e) {
+				window.open(pvdPortal[Pvd]);
+				if ((Item = GetPvdElement(Pvd, "auth-status")) != null) {
+					Item.innerHTML = "Authenticated";
+				}
+			}, false);
+		}
+	}
+
+	function SetSelectStatus(Pvd, st) {
+		if ((Item = GetPvdElement(Pvd, "select-status")) != null) {
+			Item.innerHTML = st;
+		}
+	}
+
+	function SetClickSelect(Pvd) {
+		if ((Item = GetPvdElement(Pvd, "select")) != null) {
+			Item.addEventListener("click", function(e) {
+				allPvd.forEach(function(Pvd2) {
+					if (Pvd2 != Pvd) {
+						SetSelectStatus(Pvd2, "Not selected");
+					}
+				});
+				SetSelectStatus(Pvd, "Selected");
+			}, false);
+		}
+	}
+
+
+	function HandleMessage(m) {
+		if (m == null) {
+			return;
+		}
+		if (m.what == "pvdList") {
+			var pvdList = m.payload.pvdList;
+
+			console.log("pvdList : " + pvdList);
+
+			attributesRetrieved = {};
+			pvdWithPortal = [];
+			pvdPortal = {};
+			allPvd = [];
+
+			pvdList.forEach(function(Pvd) {
+				attributesRetrieved[Pvd] = false;
+			});
+			document.getElementById("pvdList").innerHTML = "<table/>";
+			console.log("New pvd list : ", attributesRetrieved);
+			return;
+		}
+		if (m.what == "pvdAttributes") {
+			var Pvd = m.payload.pvd;
+			var Attributes = m.payload.pvdAttributes;
+
+			if (Pvd == null || Attributes == null) {
+				return;
+			}
+
+			console.log("Attributes for " + Pvd + " : " + JSON.stringify(Attributes, null, "\t"));
+
+			var PortalURL =
+				Attributes.captivePortalURL ||
+				(Attributes.extraInfo == null ? null :
+				 	Attributes.extraInfo.captivePortalURL);
+
+			if (allPvd.indexOf(Pvd) == -1) {
+				allPvd.push(Pvd);
+			}
+			if (PortalURL != null) {
+				if (pvdPortal[Pvd] == null) {
+					pvdWithPortal.push(Pvd);
+				}
+				pvdPortal[Pvd] = PortalURL;
+				console.log("Portal for " + Pvd + " received : " + pvdPortal[Pvd]);
+				console.log("pvdWithPortal : ", pvdWithPortal);
+			}
+			else {
+				console.log("No portal for " + Pvd);
+			}
+			delete(attributesRetrieved[Pvd]);
+
+			console.log("attributesRetrieved : ", attributesRetrieved);
+
+			if (Object.keys(attributesRetrieved).length != 0) {
+				return;
+			}
+			console.log("All expected pvd received");
+
+			// All attributes have been retrieved : the list of
+			// PvD with a captive portal URL is stored in
+			// pvdWithPortal. Let's build the html table
+
+			var MyTable = "<table>";
+			allPvd.forEach(function(Pvd) {
+				var AuthHTML;
+
+				if (pvdPortal[Pvd] == null) {
+					AuthHTML =
+					   "<td>" +
+					     "<label type='label'> </label>" +
+					   "</td>";
+				}
+				else {
+					AuthHTML =
+					    "<td>" +
+					        "<button type='button' id='pvd-" + Pvd + "'>" +
+						    "Authenticate" +
+					        "</button>" +
+					    "</td>";
+				}
+				MyTable +=
+					"<tr>" +
+					    "<td>" +
+					        "<button type='label' id='label-" + Pvd + "'>" +
+						    Pvd +
+					        "</button>" +
+					    "</td>" +
+					    AuthHTML +
+					    "<td>" +
+					        "<button type='button' id='select-" + Pvd + "'>" +
+						    "Select" +
+					        "</button>" +
+					    "</td>" +
+					    "<td>" +
+					        "<label type='label' id='auth-status-" + Pvd + "'>" +
+						    (pvdPortal[Pvd] ? "Not authenticated" : "") +
+					        "</label>" +
+					    "</td>" +
+					    "<td>" +
+					        "<label type='label' id='select-status-" + Pvd + "'>" +
+						    "Not selected" +
+					        "</label>" +
+					    "</td>" +
+					"</tr>";
+			});
+			MyTable += "</table>";
+			document.getElementById("pvdList").innerHTML = MyTable;
+
+			// Set the attributes of the various PvD HTML items
+			// and attach callbacks
+			allPvd.forEach(function(Pvd) {
+				ActivePvD(Pvd);
+				SetClickAuthenticate(Pvd);
+				SetClickSelect(Pvd);
+			});
+		}
+	}
+
+	function SendWs(m) {
+		ws.send(m);
+	}
+
+	function GetJson(m) {
+		try {
+			return(JSON.parse(m));
+		}
+		catch (e) {
+			return(null);
+		}
+	}
+
+	// Attempt to perform the websocket connection. If it
+	// fails or if the connection is lost, a new attempt
+	// is done 1 second later
+	var ConnectionSucceeded = true;	// true : not a mistake. Used to limit traces
+
+	function WSConnect(WSServer) {
+		if (ws == null) {
+			ws = new WebSocket(WSServer);
+
+			ws.onopen = function(ev) {
+				console.log("websocket connection established");
+
+				SendWs("PVD_GET_LIST");
+				SendWs("PVD_GET_ATTRIBUTES");
+
+				ConnectionSucceeded = true;
+			};
+
+			ws.onclose = function(ev) {
+				if (ConnectionSucceeded) {
+					console.log("websocket disconnected");
+				}
+				ConnectionSucceeded = false;
+				ws = null;
+			};
+
+			ws.onmessage = function(ev) {
+				HandleMessage(GetJson(ev.data));
+			};
+
+			ws.onerror = function(ev) {
+				if (ConnectionSucceeded) {
+					console.log("Error establishing websocket connection");
+				}
+				ConnectionSucceeded = false;
+				ws = null;
+			};
+		}
+		setTimeout(WSConnect, 1000, WSServer);
+	}
+
+	document.addEventListener("DOMContentLoaded", function() {
+		PvdAttributesTitle = document.getElementById("pvdAttributesLabel");
+		PvdAttributesContent = document.getElementById("pvdAttributes");
+
+		WSConnect("ws://" + window.location.host);
+	});
+</script>
+<body>
+<div align="center" style="font-style:normal; font-weight:bold; background-color:black; color:white">
+	<p style="display:inline-block" >Domains requiring authentication</p>
+</div>
+<table width=100% height=100%>
+<tr style="vertical-align:top" width=100%>
+	<td id="pvdList" align="left" style="background-color: AntiqueWhite" width=15% />
+</tr>
+</body>
+</html>
+
