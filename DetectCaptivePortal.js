@@ -42,23 +42,18 @@ function handlePvdAttributes(pvdname, attrs) {
 	if (captivePortal != null &&
 	    allPvd[pvdname] != null &&
 	    allPvd[pvdname].captivePortal != captivePortal) {
-		exec("firefox -new-tab " + captivePortal);
-		console.log("Starting firefox on " + captivePortal);
+		exec("firefox -new-tab " + "http://localhost:8080 &");
+		console.log("Starting firefox on " + "http://localhost:8080");
 	}
 	allPvd[pvdname].captivePortal = captivePortal;
 }
 
 function Monitor() {
 	pvddCnx = pvdd.connect({ autoReconnect : true });
-
 	pvddCnx.on("connect", handleConnection);
-
 	pvddCnx.on("error", handleError);
-
 	pvddCnx.on("pvdList", handlePvdList);
-
 	pvddCnx.on("delPvd", handleDelPvd);
-
 	pvddCnx.on("pvdAttributes", handlePvdAttributes);
 }
 
