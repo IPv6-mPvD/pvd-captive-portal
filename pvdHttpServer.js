@@ -53,6 +53,7 @@ function dlog(s) {
 function SelectPvd(Pvd) {
 	if ((p = allPvd[Pvd].attributes) == null) return;
 	if ((p = p.extraInfo) == null) return;
+	if ((p = p.prefixes) == null) return;
 
 	try {
 		fs.unlinkSync(OutAddrFile);
