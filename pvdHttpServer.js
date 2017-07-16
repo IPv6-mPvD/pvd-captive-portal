@@ -22,6 +22,7 @@ const Net = require("net");
 const http = require('http');
 const os = require("os");
 const fs = require('fs');
+var exec = require("child_process").exec;
 const EventEmitter = require('events').EventEmitter;
 
 var WebSocketServer = require('websocket').server;
@@ -36,11 +37,32 @@ var allPvd = {};
 var currentPvdList = [];
 
 var Port = parseInt(process.env["PVDD_PORT"]) || 10101;
+var OutAddrFile = process.env["BIND_ADDR_FILE"] || "/tmp/pvd-addr";
 
 function dlog(s) {
 	if (verbose) {
 		console.log(s);
 	}
+}
+
+/*
+ * SelectPvd : very specific for the captive portal feature (HACK inside).
+ * We want to generate a file that can be read by a preloaded library
+ * running (so to say) firefox
+ */
+function SelectPvd(Pvd) {
+	if ((p = allPvd[Pvd].attributes) == null) return;
+	if ((p = p.extraInfo) == null) return;
+
+	try {
+		fs.unlinkSync(OutAddrFile);
+	}
+	catch (e) {
+	}
+
+	p.prefixes.forEach(function(prefix) {
+		exec(__dirname + "/get-addr.sh " + prefix + " " + OutAddrFile);
+	});
 }
 
 /*
@@ -242,6 +264,9 @@ function HandleMessage(conn, m) {
 				});
 			}
 		};
+	} else
+	if ((r = m.match(/PVD_SELECT_PVD (.*)/i)) != null) {
+		SelectPvd(r[1]);
 	}
 }
 

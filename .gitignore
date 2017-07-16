@@ -2,3 +2,5 @@ Session*.vim
 .*.sw?
 node_modules
 npm-debug.log
+*.o
+*.so

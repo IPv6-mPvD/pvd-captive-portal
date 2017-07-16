@@ -12,6 +12,7 @@
 	var pvdWithPortal = [];
 	var pvdPortal = {};
 	var pvdName = {};
+	var pvdHasInternet = {};
 	var allPvd = [];
 
 	function GetPvdElement(Pvd, prefix = "pvd") {
@@ -57,6 +58,7 @@
 					}
 				});
 				SetSelectStatus(Pvd, "Selected");
+				SendWs("PVD_SELECT_PVD " + Pvd);
 			}, false);
 		}
 	}
@@ -97,6 +99,10 @@
 				Attributes.extraInfo == null ? Pvd :
 					Attributes.extraInfo.name == null ? Pvd :
 						Attributes.extraInfo.name;
+
+			pvdHasInternet[Pvd] =
+				Attributes.extraInfo == null ? true :
+					! Attributes.extraInfo.noInternet;
 
 			var PortalURL =
 				Attributes.captivePortalURL ||
@@ -169,6 +175,13 @@
 					    "<td>" +
 					        "<label type='label' id='select-status-" + Pvd + "'>" +
 						    "Not selected" +
+					        "</label>" +
+					    "</td>" +
+					    "<td>" +
+					        "<label type='label' id='internet-status-" + Pvd + "'>" +
+						    (pvdHasInternet[Pvd] ?
+						     	"Internet access" :
+							"<span style='color:red;'>No Internet access</span>") +
 					        "</label>" +
 					    "</td>" +
 					"</tr>";
