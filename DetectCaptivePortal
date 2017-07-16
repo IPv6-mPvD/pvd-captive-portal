@@ -3,4 +3,4 @@
 export NODE_PATH
 NODE_PATH=/usr/local/lib/node_modules
 
-exec node `dirname $0`/DetectCaptivePortal.js
+exec node `dirname $0`/DetectCaptivePortal.js "$@"
