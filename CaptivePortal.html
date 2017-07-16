@@ -11,6 +11,7 @@
 	var attributesRetrieved = {};
 	var pvdWithPortal = [];
 	var pvdPortal = {};
+	var pvdName = {};
 	var allPvd = [];
 
 	function GetPvdElement(Pvd, prefix = "pvd") {
@@ -92,6 +93,11 @@
 
 			console.log("Attributes for " + Pvd + " : " + JSON.stringify(Attributes, null, "\t"));
 
+			pvdName[Pvd] =
+				Attributes.extraInfo == null ? Pvd :
+					Attributes.extraInfo.name == null ? Pvd :
+						Attributes.extraInfo.name;
+
 			var PortalURL =
 				Attributes.captivePortalURL ||
 				(Attributes.extraInfo == null ? null :
@@ -146,7 +152,7 @@
 					"<tr>" +
 					    "<td>" +
 					        "<button type='label' id='label-" + Pvd + "'>" +
-						    Pvd +
+						    pvdName[Pvd] +
 					        "</button>" +
 					    "</td>" +
 					    AuthHTML +

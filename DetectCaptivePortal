@@ -23,6 +23,6 @@ do
 	kill $p
 done
 
-sleep 5
+sleep 1
 
 exec node `dirname $0`/DetectCaptivePortal.js "$@"
