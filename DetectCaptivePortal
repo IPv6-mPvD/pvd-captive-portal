@@ -3,6 +3,11 @@
 export NODE_PATH
 NODE_PATH=/usr/local/lib/node_modules
 
+export BIND_ADDR_FILE
+BIND_ADDR_FILE=/tmp/pvd-add
+
+/bin/rm -f $BIND_ADDR_FILE
+
 ps auxww |
 grep pvdHttpServer.js |
 grep node |

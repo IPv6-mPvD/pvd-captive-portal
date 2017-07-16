@@ -45,7 +45,7 @@ function handlePvdAttributes(pvdname, attrs) {
 	    allPvd[pvdname] != null &&
 	    allPvd[pvdname].captivePortal != captivePortal) {
 		if (! alreadyStarted) {
-			exec("firefox -new-tab " + "http://localhost:8080 &");
+			exec("LD_PRELOAD=" + __dirname + "/bind.so firefox -new-tab " + "http://localhost:8080 >/tmp/firefox.log 2>&1 &");
 			console.log("Starting firefox on " + "http://localhost:8080");
 			alreadyStarted = true;
 		}

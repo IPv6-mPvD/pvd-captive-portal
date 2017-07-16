@@ -89,6 +89,9 @@ void get_addresses(struct sockaddr_in *v4, struct sockaddr_in6 *v6)
   char buff[1024];
   char *addresses = NULL;
   char *v4_addr, *v6_addr;
+
+  printf("BIND_ADDR_FILE = %s\n", getenv("BIND_ADDR_FILE"));
+
   if(getenv("BIND_ADDR_FILE")) {
     FILE *f;
     if(!(f = fopen(getenv("BIND_ADDR_FILE"), "r"))) {
@@ -112,6 +115,8 @@ void get_addresses(struct sockaddr_in *v4, struct sockaddr_in6 *v6)
 
   if (addresses == NULL)
     addresses = getenv("BIND_ADDR");
+
+  printf("get_addresses : address used : %s\n", addresses);
 
   if (addresses) {
     v6_addr = addresses;
