@@ -61,7 +61,7 @@ function SelectPvd(Pvd) {
 	catch (e) {
 	}
 
-	p.prefixes.forEach(function(prefix) {
+	p.forEach(function(prefix) {
 		exec(__dirname + "/get-addr.sh " + prefix + " " + OutAddrFile);
 	});
 }
