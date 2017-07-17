@@ -1,0 +1,7 @@
+{
+	"name": "Simple, no fuss PvD",
+	"prefixes": ["2001:67c:1230:baab::1/64", "2001:67c:1230:babe::1/64"],
+	"noInternet": false,
+	"metered": false,
+	"captivePortalURL" : "https://simple.mpvd.io/captive.php"
+}

@@ -1,0 +1,7 @@
+{
+	"name": "PvD for smart people",
+	"prefixes": ["2001:67c:1230:abba::1/64", "2001:67c:1230:bade::1/64"],
+	"noInternet": false,
+	"metered": false,
+	"captivePortalURL" : "https://smart.mpvd.io/captive.php"
+}
