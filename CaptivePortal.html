@@ -1,6 +1,7 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <script type="text/javascript">
 	var ws;
@@ -37,7 +38,7 @@
 			Item.addEventListener("click", function(e) {
 				window.open(pvdPortal[Pvd]);
 				if ((Item = GetPvdElement(Pvd, "auth-status")) != null) {
-					Item.innerHTML = "Authenticated";
+					Item.innerHTML = '<i class="material-icons" style="font-size:48px;color:green">done</i>';
 				}
 			}, false);
 		}
@@ -54,10 +55,10 @@
 			Item.addEventListener("click", function(e) {
 				allPvd.forEach(function(Pvd2) {
 					if (Pvd2 != Pvd) {
-						SetSelectStatus(Pvd2, "Not selected");
+						SetSelectStatus(Pvd2, ".");
 					}
 				});
-				SetSelectStatus(Pvd, "Selected");
+				SetSelectStatus(Pvd, "<i class="material-icons" style="font-size:48px;color:green">done</i>");
 				SendWs("PVD_SELECT_PVD " + Pvd);
 			}, false);
 		}
@@ -136,7 +137,14 @@
 			// PvD with a captive portal URL is stored in
 			// pvdWithPortal. Let's build the html table
 
-			var MyTable = "<table>";
+			var MyTable = "<table>" +
+				"<tr>" +
+					"<th>PvD Name</th>" +
+					"<th></th><td></th>" +
+					"<th>Authenticated</th>" +
+					"<th>Selected</th>" +
+					"<th>Internet access</th>" +
+				"</tr>" ;
 			allPvd.forEach(function(Pvd) {
 				var AuthHTML;
 
@@ -167,21 +175,23 @@
 						    "Select" +
 					        "</button>" +
 					    "</td>" +
-					    "<td>" +
+					    '<td style="text-align: center;">' +
 					        "<label type='label' id='auth-status-" + Pvd + "'>" +
-						    (pvdPortal[Pvd] ? "Not authenticated" : "") +
+						(pvdPortal[Pvd] ?
+						 	'<i class="material-icons" style="font-size:48px;color:red">done</i>' :
+							'<i class="material-icons" style="font-size:48px;color:green">done</i>' ) +
 					        "</label>" +
 					    "</td>" +
-					    "<td>" +
+					    '<td style="text-align: center;">' +
 					        "<label type='label' id='select-status-" + Pvd + "'>" +
-						    "Not selected" +
+						    "." +
 					        "</label>" +
 					    "</td>" +
-					    "<td>" +
+					    '<td style="text-align: center;">' +
 					        "<label type='label' id='internet-status-" + Pvd + "'>" +
 						    (pvdHasInternet[Pvd] ?
-						     	"Internet access" :
-							"<span style='color:red;'>No Internet access</span>") +
+						        '<i class="material-icons" style="font-size:48px;color:green">cloud_queue</i>' :
+							'<i class="material-icons" style="font-size:48px;color:red">cloud_off</i>') +
 					        "</label>" +
 					    "</td>" +
 					"</tr>";
@@ -261,8 +271,8 @@
 	});
 </script>
 <body>
-<div align="center" style="font-style:normal; font-weight:bold; background-color:black; color:white">
-	<p style="display:inline-block" >Provisioning Domains</p>
+<div align="center" style="font-style:normal; font-weight:bold; background-color: blue; color:white">
+	<p style="display:inline-block" >Provisioning Domains and Captive Portals Demonstration</p>
 </div>
 <table width=100% height=100%>
 <tr style="vertical-align:top" width=100%>
