@@ -126,13 +126,13 @@
 				if (pvdPortal[Pvd] == null) {
 					pvdWithPortal.push(Pvd);
 				}
-				pvdPortal[Pvd] = PortalURL;
 				console.log("Portal for " + Pvd + " received : " + pvdPortal[Pvd]);
 				console.log("pvdWithPortal : ", pvdWithPortal);
 			}
 			else {
 				console.log("No portal for " + Pvd);
 			}
+			pvdPortal[Pvd] = PortalURL;
 			delete(attributesRetrieved[Pvd]);
 
 			console.log("attributesRetrieved : ", attributesRetrieved);
