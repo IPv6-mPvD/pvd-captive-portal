@@ -15,6 +15,10 @@
 	var pvdName = {};
 	var pvdHasInternet = {};
 	var allPvd = [];
+	var currentSelected = null;
+
+	const DONE_GREEN = '<i class="material-icons" style="font-size:48px;color:green">done</i>';
+
 
 	function GetPvdElement(Pvd, prefix = "pvd") {
 		return(Pvd == null ?
@@ -38,7 +42,7 @@
 			Item.addEventListener("click", function(e) {
 				window.open(pvdPortal[Pvd]);
 				if ((Item = GetPvdElement(Pvd, "auth-status")) != null) {
-					Item.innerHTML = '<i class="material-icons" style="font-size:48px;color:green">done</i>';
+					Item.innerHTML = DONE_GREEN;
 				}
 			}, false);
 		}
@@ -50,6 +54,10 @@
 		}
 	}
 
+	function TickSelected(Pvd) {
+		SetSelectStatus(Pvd, DONE_GREEN);
+	}
+
 	function SetClickSelect(Pvd) {
 		if ((Item = GetPvdElement(Pvd, "select")) != null) {
 			Item.addEventListener("click", function(e) {
@@ -58,7 +66,8 @@
 						SetSelectStatus(Pvd2, ".");
 					}
 				});
-				SetSelectStatus(Pvd, "<i class="material-icons" style="font-size:48px;color:green">done</i>");
+				TickSelected(Pvd);
+				currentSelected = Pvd;
 				SendWs("PVD_SELECT_PVD " + Pvd);
 			}, false);
 		}
@@ -205,6 +214,9 @@
 				ActivePvD(Pvd);
 				SetClickAuthenticate(Pvd);
 				SetClickSelect(Pvd);
+				if (currentSelected == Pvd) {
+					TickSelected(currentSelected);
+				}
 			});
 		}
 	}
