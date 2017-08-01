@@ -45,21 +45,32 @@ function dlog(s) {
 	}
 }
 
-/*
- * SelectPvd : very specific for the captive portal feature (HACK inside).
- * We want to generate a file that can be read by a preloaded library
- * running (so to say) firefox
- */
-function SelectPvd(Pvd) {
-	if ((p = allPvd[Pvd].attributes) == null) return;
-	if ((p = p.extraInfo) == null) return;
-	if ((p = p.prefixes) == null) return;
-
+function UnlinkFile(FileName) {
 	try {
-		fs.unlinkSync(OutAddrFile);
+		fs.unlinkSync(FileName);
 	}
 	catch (e) {
 	}
+}
+
+/*
+ * SelectPvd : very specific for the captive portal feature (HACK inside).
+ * We want to generate a file that can be read by a preloaded library
+ * running (so to say) firefox.
+ * Implicit PvDs have no extra information. We use a different src address
+ * selection algorithm
+ */
+function SelectPvd(Pvd) {
+	UnlinkFile(OutAddrFile);
+
+	if ((p = allPvd[Pvd].attributes) == null) return;
+
+	if (p.implicit && p.dev != "<no dev>") {
+		exec(__dirname + "/get-local-addr.sh " + p.dev + " " + OutAddrFile);
+		return;
+	}
+	if ((p = p.extraInfo) == null) return;
+	if ((p = p.prefixes) == null) return;
 
 	p.forEach(function(prefix) {
 		exec(__dirname + "/get-addr.sh " + prefix + " " + OutAddrFile);
