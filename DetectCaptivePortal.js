@@ -7,12 +7,13 @@ var pvddCnx = null;
 var alreadyStarted = false;
 
 function handleConnection() {
-        pvddCnx.getList();
-        console.log("Connection established with pvdd");
+	pvddCnx.subscribeNotifications();
+	pvddCnx.getList();
+	console.log("Connection established with pvdd");
 }
 
 function handleError(err) {
-        console.log("Connection lost with pvdd (" + err.message + ")");
+	console.log("Connection lost with pvdd (" + err.message + ")");
 	alreadyStarted = false;
 }
 
