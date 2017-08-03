@@ -8,7 +8,7 @@
 # Gets called by pvdHttpServer.js
 
 getaddr() {
-	ip -$1 addr show "$3" |
+	ip -$1 addr show "$3" 2>/dev/null |
 	grep $2 |
 	head -1 |
 	awk '{print $2}' |
@@ -20,9 +20,7 @@ addr4=`getaddr 4 inet "$1"`
 
 [ -z "${addr4}${addr6}" ] && exit 0
 
-if [ -n "$addr4" ]
-then
-	[ -n "$addr6" ] && echo "$addr6,$addr4" || echo "$addr4"
-else
-	echo "$addr6"
-fi >"$2"
+{
+	[ -z "$addr6" ] || echo "$addr6"
+	[ -z "$addr4" ] || echo "$addr4"
+} >"$2"
