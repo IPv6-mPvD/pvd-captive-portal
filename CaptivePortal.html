@@ -48,16 +48,6 @@
 		}
 	}
 
-	function SetSelectStatus(Pvd, st) {
-		if ((Item = GetPvdElement(Pvd, "select-status")) != null) {
-			Item.innerHTML = st;
-		}
-	}
-
-	function TickSelected(Pvd) {
-		SetSelectStatus(Pvd, DONE_GREEN);
-	}
-
 	function SetClickSelect(Pvd) {
 		if ((Item = GetPvdElement(Pvd, "select")) != null) {
 			Item.addEventListener("click", function(e) {
