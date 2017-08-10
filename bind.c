@@ -23,8 +23,6 @@
 #include <errno.h>
 #include <string.h>
 
-#define INIT_GRACE_TIME 2
-
 int (*real_bind)(int, const struct sockaddr *, socklen_t);
 int (*real_connect)(int, const struct sockaddr *, socklen_t);
 
@@ -54,51 +52,44 @@ void _init(void)
  */
 static	void	parseOneLine(
 			char *Line,
-			struct sockaddr_in *v4,
-			struct sockaddr_in6 *v6,
-			struct sockaddr_in *peerv4,
-			struct sockaddr_in6 *peerv6)
+			struct sockaddr *dst,
+			const struct sockaddr *peer)
 {
-	struct sockaddr_in dstv4;
-	struct sockaddr_in6 dstv6;
+#define	v4	((struct sockaddr_in *) dst)
+#define	v6	((struct sockaddr_in6 *) dst)
+
+	int	family = peer->sa_family;
 	char	*ptSrcAddr = strchr(Line, ' ');
-	char	*pt = strchr(Line, ':');
+	char	*ptColon = strchr(Line, ':');
 	char	str[64];
+	char	dstAddr[32];	/* 16 bytes are sufficient */
+	void	*peerAddr;
+	int	n;
+
+	if ((ptColon != NULL && family != AF_INET6) ||
+	    (ptColon == NULL && family != AF_INET)) {
+		return;
+	}
 
 	if (ptSrcAddr != NULL) {
 		*ptSrcAddr++ = '\0';
 
 		/*
-		 * Format 3, 4, 5 or 6
+		 * Format 3, 4, 5 or 6 : check if dest address field of the line
+		 * is matching the peer address
 		 */
-		if (pt != NULL) {
-			if (peerv6) {
-				if (Line[0] != '*') {
-					inet_pton(AF_INET6, Line, &dstv6.sin6_addr);
-					if (memcmp(&dstv6.sin6_addr,
-						   &peerv6->sin6_addr,
-						   sizeof(dstv6.sin6_addr)) != 0) {
-						/*
-						 * destination address does not match
-						 */
-						return;
-					}
-				}
+		if (Line[0] != '*') {
+			inet_pton(family, Line, dstAddr);
+			if (family == AF_INET) {
+				n = sizeof(struct in_addr);
+				peerAddr = &((struct sockaddr_in *) peer)->sin_addr;
 			}
-		}
-		else {
-			if (peerv4) {
-				if (Line[0] != '*') {
-					dstv4.sin_addr.s_addr = inet_addr(Line);
-					if (memcmp(&dstv4.sin_addr.s_addr,
-						   &peerv4->sin_addr.s_addr,
-						   sizeof(dstv4.sin_addr.s_addr)) != 0) {
-						/*
-						 * destination address does not match
-						 */
-						return;
-					}
-				}
+			else {
+				n = sizeof(struct in6_addr);
+				peerAddr = &((struct sockaddr_in6 *) peer)->sin6_addr;
+			}
+			if (memcmp(dstAddr, peerAddr, n) != 0) {
+				return;
 			}
 		}
 	}
@@ -106,59 +97,54 @@ static	void	parseOneLine(
 		ptSrcAddr = Line;
 	}
 
-	if (pt != NULL) {
-		if (v6) {
-			memset(v6, 0, sizeof(*v6));
-			v6->sin6_family = AF_INET6;
-			inet_pton(AF_INET6, ptSrcAddr, &v6->sin6_addr);
-			inet_ntop(AF_INET6, &v6->sin6_addr, str, 64);
-			printf("(v6 = %s) ", str);
-		}
+	if (family == AF_INET6) {
+		memset(v6, 0, sizeof(*v6));
+		v6->sin6_family = family;
+		inet_pton(family, ptSrcAddr, &v6->sin6_addr);
+		inet_ntop(family, &v6->sin6_addr, str, 63);
+		printf("(v6 = %s) ", str);
 	}
 	else {
-		if (v4) {
-			memset(v4, 0, sizeof(*v4));
-			v4->sin_family = AF_INET;
-			v4->sin_addr.s_addr = inet_addr(ptSrcAddr);
-			v4->sin_port = htons(0);
-			printf("(v4=%s) ", inet_ntoa(v4->sin_addr));
-		}
+		memset(v4, 0, sizeof(*v4));
+		v4->sin_family = family;
+		v4->sin_port = htons(0);
+		inet_pton(family, ptSrcAddr, &v4->sin_addr);
+		inet_ntop(family, &v4->sin_addr, str, 63);
+		printf("(v4=%s) ", str);
 	}
 }
 
 /*
- * get_adresses : reads the BIND_ADDR_FILE and fills in either the v4 or v6
- * output variable (only one is non NULL) depending of the line read
+ * get_adresses : reads the BIND_ADDR_FILE and fills in the srcAdr
+ * output variable with the source address field of a matching line
+ * of the file. A matching line is a line for which :
+ * 1) the family type matches (contains either ipv6 or ipv4 addresses
+ * specifications)
+ * 2) the destination address is the one specified by the peer (or is '*')
  */
-static	int	get_addresses(
-			struct sockaddr_in *v4,
-			struct sockaddr_in6 *v6,
-			struct sockaddr_in *peerv4,
-			struct sockaddr_in6 *peerv6)
+static	int	getSrcAddress(
+			struct sockaddr *srcAddr,
+			const struct sockaddr *peer)
 {
 	int i, j;
 	FILE *fp;
 	char Line[1024];
 	char *bindAddrFile = getenv("BIND_ADDR_FILE");
 
-	if (v4) {
-		v4->sin_family = 0;
-	} else {
-		v6->sin6_family = 0;
-	}
+	srcAddr->sa_family = 0;
 
 	if (bindAddrFile && (fp = fopen(bindAddrFile, "r")) != NULL) {
 		while (fgets(Line, sizeof(Line) - 1, fp) != NULL) {
-			parseOneLine(Line, v4, v6, peerv4, peerv6);
+			parseOneLine(Line, srcAddr, peer);
 		}
 		fclose(fp);
 	}
-	return(v4 ? v4->sin_family != 0 : v6->sin6_family != 0);
+	return(srcAddr->sa_family != 0);
 }
 
 int connect(int sock, const struct sockaddr *sk, socklen_t sl)
 {
-	struct sockaddr_storage sockaddr;
+	struct sockaddr_storage srcAddr;
 	int family = sk->sa_family;
 	int port = ((struct sockaddr_in *) sk)->sin_port;
 	char str[64];
@@ -174,20 +160,16 @@ int connect(int sock, const struct sockaddr *sk, socklen_t sl)
 	}
 
 	if (family == AF_INET6)
-		inet_ntop(AF_INET6, &((struct sockaddr_in6 *) sk)->sin6_addr, str, 63);
+		inet_ntop(family, &((struct sockaddr_in6 *) sk)->sin6_addr, str, 63);
 	else
-		inet_ntop(AF_INET, &((struct sockaddr_in *) sk)->sin_addr, str, 63);
+		inet_ntop(family, &((struct sockaddr_in *) sk)->sin_addr, str, 63);
 
 	printf("connect : %s:%d ", str, port);
 
-	if (get_addresses(
-		family == AF_INET ? (struct sockaddr_in *) &sockaddr : NULL,
-		family == AF_INET ? NULL : (struct sockaddr_in6 *) &sockaddr,
-		family == AF_INET ? (struct sockaddr_in *) sk : NULL,
-		family == AF_INET ? NULL : (struct sockaddr_in6 *) sk)) {
+	if (getSrcAddress((struct sockaddr *) &srcAddr, sk)) {
 		if (real_bind(sock,
-			      (struct sockaddr *) &sockaddr,
-			      sizeof(sockaddr)) == -1) {
+			      (struct sockaddr *) &srcAddr,
+			      sizeof(srcAddr)) == -1) {
 			printf("real_bind -> %s\n", strerror(errno));
 		}
 	}
