@@ -63,7 +63,8 @@ function UnlinkFile(FileName) {
 function SelectPvd(Pvd) {
 	UnlinkFile(OutAddrFile);
 
-	if ((p = allPvd[Pvd].attributes) == null) return;
+	if (allPvd[Pvd] == null ||
+		(p = allPvd[Pvd].attributes) == null) return;
 
 	if (p.implicit && p.dev != "<no dev>") {
 		exec(__dirname + "/get-local-addr.sh " + p.dev + " " + OutAddrFile);
