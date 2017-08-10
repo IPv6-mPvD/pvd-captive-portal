@@ -52,19 +52,19 @@ void _init(void)
  */
 static	void	parseOneLine(
 			char *Line,
-			struct sockaddr *dst,
+			struct sockaddr *srcAddr,
 			const struct sockaddr *peer)
 {
-#define	v4	((struct sockaddr_in *) dst)
-#define	v6	((struct sockaddr_in6 *) dst)
+#define	v4	((struct sockaddr_in *) srcAddr)
+#define	v6	((struct sockaddr_in6 *) srcAddr)
 
 	int	family = peer->sa_family;
+	int	isv6 = family == AF_INET6;
 	char	*ptSrcAddr = strchr(Line, ' ');
 	char	*ptColon = strchr(Line, ':');
 	char	str[64];
 	char	dstAddr[32];	/* 16 bytes are sufficient */
-	void	*peerAddr;
-	int	n;
+	void	*addr;
 
 	if ((ptColon != NULL && family != AF_INET6) ||
 	    (ptColon == NULL && family != AF_INET)) {
@@ -80,38 +80,25 @@ static	void	parseOneLine(
 		 */
 		if (Line[0] != '*') {
 			inet_pton(family, Line, dstAddr);
-			if (family == AF_INET) {
-				n = sizeof(struct in_addr);
-				peerAddr = &((struct sockaddr_in *) peer)->sin_addr;
-			}
-			else {
-				n = sizeof(struct in6_addr);
-				peerAddr = &((struct sockaddr_in6 *) peer)->sin6_addr;
-			}
-			if (memcmp(dstAddr, peerAddr, n) != 0) {
+			if (memcmp(
+				dstAddr,
+				isv6 ?
+				    (void *) &((struct sockaddr_in6 *) peer)->sin6_addr :
+				    (void *) &((struct sockaddr_in *) peer)->sin_addr,
+				isv6 ?
+				    sizeof(struct in6_addr) : 
+				    sizeof(struct in_addr)) != 0) {
 				return;
 			}
 		}
 	}
-	else {
-		ptSrcAddr = Line;
-	}
 
-	if (family == AF_INET6) {
-		memset(v6, 0, sizeof(*v6));
-		v6->sin6_family = family;
-		inet_pton(family, ptSrcAddr, &v6->sin6_addr);
-		inet_ntop(family, &v6->sin6_addr, str, 63);
-		printf("(v6 = %s) ", str);
-	}
-	else {
-		memset(v4, 0, sizeof(*v4));
-		v4->sin_family = family;
-		v4->sin_port = htons(0);
-		inet_pton(family, ptSrcAddr, &v4->sin_addr);
-		inet_ntop(family, &v4->sin_addr, str, 63);
-		printf("(v4=%s) ", str);
-	}
+	srcAddr->sa_family = family;
+	addr = isv6 ? (void *) &v6->sin6_addr : (void *) &v4->sin_addr;
+
+	inet_pton(family, ptSrcAddr ? ptSrcAddr : Line, addr);
+	inet_ntop(family, addr, str, 63);
+	printf(isv6 ? "(v6 = %s) " : "(v4 %s) ", str);
 }
 
 /*
@@ -148,6 +135,8 @@ int connect(int sock, const struct sockaddr *sk, socklen_t sl)
 	int family = sk->sa_family;
 	int port = ((struct sockaddr_in *) sk)->sin_port;
 	char str[64];
+
+	memset(&srcAddr, 0, sizeof(srcAddr));
 
 	printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 	printf("connect : requested sk sa_family : %s\n",
