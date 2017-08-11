@@ -165,7 +165,6 @@ function SelectPvd(Pvd, Dest) {
 				address : p.addresses[0],
 				pvd : Pvd
 			};
-			console.log("Found addresses");
 			return;
 		}
 
@@ -453,17 +452,5 @@ function HandleMessage(conn, m) {
 		ResetPvdSelection(r[1]);
 	}
 }
-
-
-/*
-allPvd["pirl.cisco.com"] = {
-	attributes : {
-		"dev" : "ens0p3",
-		"prefixes" : [ "ff00:0000:0000:0000::1", "ff00:0000:0000:0000::2" ]
-	}
-};
-
-SelectPvd("pirl.cisco.com", "google.fr");
-*/
 
 /* ex: set ts=8 noexpandtab wrap: */
