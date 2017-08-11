@@ -20,7 +20,9 @@ addr4=`getaddr 4 inet "$1"`
 
 [ -z "${addr4}${addr6}" ] && exit 0
 
+[ -z "$2" ] && Out=/dev/stdout || Out="$2"
+
 {
 	[ -z "$addr6" ] || echo "$addr6"
 	[ -z "$addr4" ] || echo "$addr4"
-} >"$2"
+} >"$Out"
